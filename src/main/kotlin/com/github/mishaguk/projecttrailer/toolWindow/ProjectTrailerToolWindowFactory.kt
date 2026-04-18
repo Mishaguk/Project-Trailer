@@ -13,7 +13,10 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.components.JBTextField
+import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBPanel
 import com.intellij.ui.content.ContentFactory
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
@@ -33,7 +36,6 @@ import javax.swing.SwingConstants
 import javax.swing.border.CompoundBorder
 import javax.swing.border.MatteBorder
 
-
 class ProjectTrailerToolWindowFactory : ToolWindowFactory {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -45,13 +47,106 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
     override fun shouldBeAvailable(project: Project) = true
 
     class ProjectTrailerToolWindow(toolWindow: ToolWindow) {
-
         private val project = toolWindow.project
         private val log = thisLogger()
 
-        fun getContent(): JComponent = JPanel(BorderLayout()).apply {
-            add(debugBar(), BorderLayout.NORTH)
-            add(ChatPanel().component, BorderLayout.CENTER)
+        // Главный метод: Создаем вкладки и объединяем работу команды!
+        fun getContent(): JComponent {
+            val tabbedPane = JBTabbedPane()
+            tabbedPane.addTab("Project Tour", createTourPanel())
+            tabbedPane.addTab("AI Chat & Debug", createChatAndDebugPanel())
+            return tabbedPane
+        }
+
+        // ========================================================
+        // ВКЛАДКА 1: ВАША РАБОТА (Tour UI)
+        // ========================================================
+        private fun createTourPanel(): JPanel {
+            val mainPanel = JBPanel<JBPanel<*>>(BorderLayout())
+
+            // Верх
+            val topPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+            val btnStartTour = JButton(ProjectTrailerBundle.message("tour.start"))
+            topPanel.add(btnStartTour)
+
+            // Центр
+            val centerPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
+                border = JBUI.Borders.empty(10)
+            }
+            val titleLabel = JBLabel(ProjectTrailerBundle.message("tour.welcome"))
+            val explanationArea = JTextArea().apply {
+                isEditable = false
+                lineWrap = true
+                wrapStyleWord = true
+                isOpaque = false
+                border = JBUI.Borders.emptyTop(10)
+            }
+            centerPanel.add(titleLabel, BorderLayout.NORTH)
+            centerPanel.add(explanationArea, BorderLayout.CENTER)
+
+            // Низ
+            val bottomPanel = JPanel(BorderLayout())
+            val navButtonsPanel = JPanel(FlowLayout(FlowLayout.CENTER))
+            val btnPrev = JButton(ProjectTrailerBundle.message("tour.prev")).apply { isEnabled = false }
+            val btnNext = JButton(ProjectTrailerBundle.message("tour.next")).apply { isEnabled = false }
+            val btnClose = JButton(ProjectTrailerBundle.message("tour.close")).apply { isEnabled = false }
+
+            val counterLabel = JBLabel("", SwingConstants.CENTER)
+
+            navButtonsPanel.add(btnPrev)
+            navButtonsPanel.add(btnNext)
+            navButtonsPanel.add(btnClose)
+
+            bottomPanel.add(counterLabel, BorderLayout.NORTH)
+            bottomPanel.add(navButtonsPanel, BorderLayout.CENTER)
+
+            mainPanel.add(topPanel, BorderLayout.NORTH)
+            mainPanel.add(centerPanel, BorderLayout.CENTER)
+            mainPanel.add(bottomPanel, BorderLayout.SOUTH)
+
+            // Магия: Связываем ваш UI с кодом напарника!
+            btnStartTour.addActionListener {
+                titleLabel.text = ProjectTrailerBundle.message("tour.generating")
+                explanationArea.text = ""
+                btnStartTour.isEnabled = false
+
+                ApplicationManager.getApplication().executeOnPooledThread {
+                    // Вызываем реальный AI-сервис напарника
+                    val result = TourService.getInstance(project).generate()
+
+                    ApplicationManager.getApplication().invokeLater {
+                        result.onSuccess { steps ->
+                            if (steps.isNotEmpty()) {
+                                // Показываем первый шаг из реального ответа ИИ!
+                                titleLabel.text = "1. ${steps[0].path}"
+                                explanationArea.text = steps[0].explanation
+                                counterLabel.text = ProjectTrailerBundle.message("tour.counter", 1, steps.size)
+                                btnNext.isEnabled = steps.size > 1
+                                btnClose.isEnabled = true
+                            } else {
+                                titleLabel.text = "Tour is empty."
+                                btnStartTour.isEnabled = true
+                            }
+                        }.onFailure { e ->
+                            titleLabel.text = "Failed to generate tour."
+                            Messages.showErrorDialog(project, e.message ?: "Error", "Tour Error")
+                            btnStartTour.isEnabled = true
+                        }
+                    }
+                }
+            }
+
+            return mainPanel
+        }
+
+        // ========================================================
+        // ВКЛАДКА 2: РАБОТА НАПАРНИКА (Chat & Debug)
+        // ========================================================
+        private fun createChatAndDebugPanel(): JPanel {
+            return JPanel(BorderLayout()).apply {
+                add(debugBar(), BorderLayout.NORTH)
+                add(ChatPanel().component, BorderLayout.CENTER)
+            }
         }
 
         private fun debugBar(): JPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
@@ -60,6 +155,66 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
             add(generateTourButton())
         }
 
+        private fun scanButton() = JButton(ProjectTrailerBundle.message("debug.scan.button")).apply {
+            addActionListener {
+                val button = this
+                button.isEnabled = false
+                ApplicationManager.getApplication().executeOnPooledThread {
+                    val output = ProjectStructureScanner.scan(project)
+                    log.info("ProjectStructureScanner output:\n$output")
+                    ApplicationManager.getApplication().invokeLater {
+                        button.isEnabled = true
+                        Messages.showInfoMessage(
+                            project,
+                            ProjectTrailerBundle.message("debug.scan.done", output.length),
+                            ProjectTrailerBundle.message("debug.scan.title"),
+                        )
+                    }
+                }
+            }
+        }
+
+        private fun testConnectionButton() = JButton(ProjectTrailerBundle.message("ai.test.button")).apply {
+            addActionListener {
+                val button = this
+                button.isEnabled = false
+                ApplicationManager.getApplication().executeOnPooledThread {
+                    val result = OpenAiClient.getInstance().testConnection()
+                    ApplicationManager.getApplication().invokeLater {
+                        button.isEnabled = true
+                        val title = ProjectTrailerBundle.message("ai.test.title")
+                        result.onSuccess {
+                            Messages.showInfoMessage(project, ProjectTrailerBundle.message("ai.test.ok"), title)
+                        }.onFailure { e ->
+                            Messages.showErrorDialog(project, ProjectTrailerBundle.message("ai.test.failed", e.message ?: ""), title)
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun generateTourButton() = JButton(ProjectTrailerBundle.message("debug.tour.button")).apply {
+            addActionListener {
+                val button = this
+                button.isEnabled = false
+                ApplicationManager.getApplication().executeOnPooledThread {
+                    val result = TourService.getInstance(project).generate()
+                    ApplicationManager.getApplication().invokeLater {
+                        button.isEnabled = true
+                        val title = ProjectTrailerBundle.message("debug.tour.title")
+                        result.onSuccess { steps ->
+                            Messages.showInfoMessage(project, ProjectTrailerBundle.message("debug.tour.done", steps.size), title)
+                        }.onFailure { e ->
+                            Messages.showErrorDialog(project, ProjectTrailerBundle.message("ai.test.failed", e.message ?: ""), title)
+                        }
+                    }
+                }
+            }
+        }
+
+        // ========================================================
+        // ВНУТРЕННИЕ КЛАССЫ НАПАРНИКА ДЛЯ ЧАТА
+        // ========================================================
         private inner class ChatPanel {
             private val messages = JPanel().apply {
                 layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -70,9 +225,7 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
                 verticalScrollBar.unitIncrement = 16
                 border = JBUI.Borders.empty()
             }
-            private val input = JBTextField().apply {
-                emptyText.text = ProjectTrailerBundle.message("chat.placeholder")
-            }
+            private val input = JBTextField().apply { emptyText.text = ProjectTrailerBundle.message("chat.placeholder") }
             private val sendBtn = JButton(ProjectTrailerBundle.message("chat.send"))
             private val resetBtn = JButton(ProjectTrailerBundle.message("chat.reset"))
 
@@ -95,7 +248,6 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
                 }
             }
 
-            // Wraps the messages column so BoxLayout content sticks to the top of the scroll pane.
             private fun wrap(content: JComponent): JComponent = JPanel(BorderLayout()).apply {
                 add(content, BorderLayout.NORTH)
                 background = JBColor.background()
@@ -113,12 +265,8 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
                 ApplicationManager.getApplication().executeOnPooledThread {
                     val result = ChatService.getInstance(project).ask(text)
                     ApplicationManager.getApplication().invokeLater {
-                        result.onSuccess { reply ->
-                            thinkingBubble.setText(reply)
-                        }.onFailure { e ->
-                            thinkingBubble.setError(ProjectTrailerBundle.message("chat.error", e.message ?: ""))
-                            log.warn("Chat ask failed", e)
-                        }
+                        result.onSuccess { reply -> thinkingBubble.setText(reply) }
+                            .onFailure { e -> thinkingBubble.setError(ProjectTrailerBundle.message("chat.error", e.message ?: "")) }
                         setInputEnabled(true)
                         input.requestFocusInWindow()
                     }
@@ -168,28 +316,16 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
         }
 
         private enum class Role(val label: String, val accent: JBColor, val background: JBColor) {
-            USER(
-                "You",
-                JBColor(Color(0x34, 0x78, 0xF6), Color(0x58, 0xA6, 0xFF)),
-                JBColor(Color(0xEE, 0xF4, 0xFF), Color(0x2C, 0x33, 0x42)),
-            ),
-            ASSISTANT(
-                "AI",
-                JBColor(Color(0x28, 0xA7, 0x45), Color(0x3F, 0xB9, 0x50)),
-                JBColor(Color(0xF5, 0xF7, 0xF5), Color(0x2A, 0x2E, 0x2A)),
-            );
+            USER("You", JBColor(Color(0x34, 0x78, 0xF6), Color(0x58, 0xA6, 0xFF)), JBColor(Color(0xEE, 0xF4, 0xFF), Color(0x2C, 0x33, 0x42))),
+            ASSISTANT("AI", JBColor(Color(0x28, 0xA7, 0x45), Color(0x3F, 0xB9, 0x50)), JBColor(Color(0xF5, 0xF7, 0xF5), Color(0x2A, 0x2E, 0x2A)));
         }
 
         private class MessageBubble(role: Role, text: String) : JPanel(BorderLayout()) {
             private val body: JTextArea
-
             init {
                 alignmentX = Component.LEFT_ALIGNMENT
                 background = role.background
-                border = CompoundBorder(
-                    MatteBorder(0, 3, 0, 0, role.accent),
-                    JBUI.Borders.empty(8, 10, 8, 10),
-                )
+                border = CompoundBorder(MatteBorder(0, 3, 0, 0, role.accent), JBUI.Borders.empty(8, 10, 8, 10))
 
                 val header = JLabel(role.label).apply {
                     font = JBFont.label().asBold()
@@ -213,7 +349,6 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
                     add(body)
                 }
                 add(column, BorderLayout.CENTER)
-
                 maximumSize = Dimension(Int.MAX_VALUE, Int.MAX_VALUE / 2)
             }
 
@@ -228,90 +363,6 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
                 body.foreground = JBColor(Color(0xB4, 0x21, 0x2A), Color(0xF8, 0x51, 0x49))
                 revalidate()
                 repaint()
-            }
-        }
-
-        private fun scanButton() = JButton(ProjectTrailerBundle.message("debug.scan.button")).apply {
-            addActionListener {
-                val button = this
-                button.isEnabled = false
-                ApplicationManager.getApplication().executeOnPooledThread {
-                    val output = ProjectStructureScanner.scan(project)
-                    println("===== ProjectStructureScanner output (${output.length} chars) =====")
-                    println(output)
-                    println("===== end =====")
-                    log.info("ProjectStructureScanner output:\n$output")
-                    ApplicationManager.getApplication().invokeLater {
-                        button.isEnabled = true
-                        Messages.showInfoMessage(
-                            project,
-                            ProjectTrailerBundle.message("debug.scan.done", output.length),
-                            ProjectTrailerBundle.message("debug.scan.title"),
-                        )
-                    }
-                }
-            }
-        }
-
-        private fun testConnectionButton() = JButton(ProjectTrailerBundle.message("ai.test.button")).apply {
-            addActionListener {
-                val button = this
-                button.isEnabled = false
-                ApplicationManager.getApplication().executeOnPooledThread {
-                    val result = OpenAiClient.getInstance().testConnection()
-                    ApplicationManager.getApplication().invokeLater {
-                        button.isEnabled = true
-                        val title = ProjectTrailerBundle.message("ai.test.title")
-                        result.onSuccess {
-                            Messages.showInfoMessage(
-                                project,
-                                ProjectTrailerBundle.message("ai.test.ok"),
-                                title,
-                            )
-                        }.onFailure { e ->
-                            Messages.showErrorDialog(
-                                project,
-                                ProjectTrailerBundle.message("ai.test.failed", e.message ?: ""),
-                                title,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun generateTourButton() = JButton(ProjectTrailerBundle.message("debug.tour.button")).apply {
-            addActionListener {
-                val button = this
-                button.isEnabled = false
-                ApplicationManager.getApplication().executeOnPooledThread {
-                    val result = TourService.getInstance(project).generate()
-                    ApplicationManager.getApplication().invokeLater {
-                        button.isEnabled = true
-                        val title = ProjectTrailerBundle.message("debug.tour.title")
-                        result.onSuccess { steps ->
-                            println("===== TourService steps (${steps.size}) =====")
-                            steps.forEachIndexed { i, s ->
-                                println("[${i + 1}] ${s.path} — ${s.title}")
-                                println("    ${s.explanation}")
-                            }
-                            println("===== end =====")
-                            log.info("Tour steps: $steps")
-                            Messages.showInfoMessage(
-                                project,
-                                ProjectTrailerBundle.message("debug.tour.done", steps.size),
-                                title,
-                            )
-                        }.onFailure { e ->
-                            log.warn("Tour generation failed", e)
-                            Messages.showErrorDialog(
-                                project,
-                                ProjectTrailerBundle.message("ai.test.failed", e.message ?: ""),
-                                title,
-                            )
-                        }
-                    }
-                }
             }
         }
     }
