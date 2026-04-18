@@ -1,15 +1,15 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>com.github.mishaguk.codeaihelper</id>
-    <name>codeAIHelper</name>
+    <id>com.github.mishaguk.projecttrailer</id>
+    <name>ProjectTrailer</name>
     <vendor>Who_knows</vendor>
 
     <depends>com.intellij.modules.platform</depends>
 
-    <resource-bundle>messages.CodeAIHelperBundle</resource-bundle>
+    <resource-bundle>messages.ProjectTrailerBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.mishaguk.codeaihelper.toolWindow.CodeAIHelperToolWindowFactory" id="codeAIHelper"/>
-        <postStartupActivity implementation="com.github.mishaguk.codeaihelper.startup.CodeAIHelperStartupActivity" />
+        <toolWindow factoryClass="com.github.mishaguk.projecttrailer.toolWindow.ProjectTrailerToolWindowFactory" id="ProjectTrailer"/>
+        <postStartupActivity implementation="com.github.mishaguk.projecttrailer.startup.ProjectTrailerStartupActivity" />
     </extensions>
 </idea-plugin>

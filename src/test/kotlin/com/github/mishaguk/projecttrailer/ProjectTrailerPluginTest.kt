@@ -1,4 +1,4 @@
-package com.github.mishaguk.codeaihelper
+package com.github.mishaguk.projecttrailer
 
 import com.intellij.ide.highlighter.XmlFileType
 import com.intellij.openapi.components.service
@@ -6,10 +6,10 @@ import com.intellij.psi.xml.XmlFile
 import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.PsiErrorElementUtil
-import com.github.mishaguk.codeaihelper.services.CodeAIHelperProjectService
+import com.github.mishaguk.projecttrailer.services.ProjectTrailerProjectService
 
 @TestDataPath("\$CONTENT_ROOT/src/test/testData")
-class CodeAIHelperPluginTest : BasePlatformTestCase() {
+class ProjectTrailerPluginTest : BasePlatformTestCase() {
 
     fun testXMLFile() {
         val psiFile = myFixture.configureByText(XmlFileType.INSTANCE, "<foo>bar</foo>")
@@ -30,7 +30,7 @@ class CodeAIHelperPluginTest : BasePlatformTestCase() {
     }
 
     fun testProjectService() {
-        val projectService = project.service<CodeAIHelperProjectService>()
+        val projectService = project.service<ProjectTrailerProjectService>()
 
         assertNotSame(projectService.getRandomNumber(), projectService.getRandomNumber())
     }

@@ -1,6 +1,6 @@
-package com.github.mishaguk.codeaihelper.ai
+package com.github.mishaguk.projecttrailer.ai
 
-import com.github.mishaguk.codeaihelper.CodeAIHelperBundle
+import com.github.mishaguk.projecttrailer.ProjectTrailerBundle
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import java.io.IOException
@@ -22,7 +22,7 @@ class OpenAiClient {
 
     fun testConnection(): Result<String> {
         val key = AiKeyProvider.getInstance().getApiKey()
-            ?: return Result.failure(IllegalStateException(CodeAIHelperBundle.message("ai.test.noKey")))
+            ?: return Result.failure(IllegalStateException(ProjectTrailerBundle.message("ai.test.noKey")))
 
         val request = HttpRequest.newBuilder()
             .uri(URI.create("${AiConfig.BASE_URL}/models"))
