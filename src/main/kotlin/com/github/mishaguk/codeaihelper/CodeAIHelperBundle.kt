@@ -1,13 +1,13 @@
-package com.github.mishaguk.intelijideaprojecthelper
+package com.github.mishaguk.codeaihelper
 
 import com.intellij.DynamicBundle
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.annotations.PropertyKey
 
 @NonNls
-private const val BUNDLE = "messages.MyBundle"
+private const val BUNDLE = "messages.CodeAIHelperBundle"
 
-object MyBundle : DynamicBundle(BUNDLE) {
+object CodeAIHelperBundle : DynamicBundle(BUNDLE) {
 
     @JvmStatic
     fun message(@PropertyKey(resourceBundle = BUNDLE) key: String, vararg params: Any) =

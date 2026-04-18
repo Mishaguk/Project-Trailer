@@ -1,6 +1,6 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
-# intelij-idea-project-helper Changelog
+# codeAIHelper Changelog
 
 ## [Unreleased]
 ### Added
