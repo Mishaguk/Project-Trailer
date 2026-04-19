@@ -9,7 +9,10 @@
     <resource-bundle>messages.ProjectTrailerBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.mishaguk.projecttrailer.toolWindow.ProjectTrailerToolWindowFactory" id="ProjectTrailer"/>
+        <toolWindow
+                anchor="right"
+                factoryClass="com.github.mishaguk.projecttrailer.toolWindow.ProjectTrailerToolWindowFactory"
+                id="ProjectTrailer"/>
         <postStartupActivity implementation="com.github.mishaguk.projecttrailer.startup.ProjectTrailerStartupActivity" />
     </extensions>
 </idea-plugin>

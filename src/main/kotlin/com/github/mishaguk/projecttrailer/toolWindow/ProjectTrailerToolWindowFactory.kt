@@ -29,6 +29,7 @@ import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JComponent
+import javax.swing.JEditorPane
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextArea
@@ -67,16 +68,23 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
             val centerPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
                 border = JBUI.Borders.empty(10)
             }
-            val titleLabel = JBLabel(ProjectTrailerBundle.message("tour.welcome"))
-            val explanationArea = JTextArea().apply {
+
+            val explanationArea = JEditorPane().apply {
+                contentType = "text/html"
                 isEditable = false
-                lineWrap = true
-                wrapStyleWord = true
                 isOpaque = false
                 border = JBUI.Borders.emptyTop(10)
+                putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, true)
+                text = "<html><body><i>${ProjectTrailerBundle.message("tour.welcome")}</i></body></html>"
             }
-            centerPanel.add(titleLabel, BorderLayout.NORTH)
-            centerPanel.add(explanationArea, BorderLayout.CENTER)
+
+            val scrollPane = JBScrollPane(explanationArea).apply {
+                border = JBUI.Borders.empty()
+                isOpaque = false
+                viewport.isOpaque = false
+            }
+
+            centerPanel.add(scrollPane, BorderLayout.CENTER)
 
             val bottomPanel = JPanel(BorderLayout())
             val navButtonsPanel = JPanel(FlowLayout(FlowLayout.CENTER))
@@ -100,8 +108,21 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
             val controller = TourController(
                 project = project,
                 onStepChanged = { step, currentIndex, totalSteps ->
-                    titleLabel.text = "${currentIndex + 1}. ${step.path}"
-                    explanationArea.text = step.explanation
+                    val formattedHtml = """
+                        <html>
+                        <body style="line-height: 1.5;">
+                            <h3 style="color: #58A6FF; margin-top: 0; margin-bottom: 10px;">${step.path}</h3>
+                            <div style="font-size: 13px;">
+                                ${step.explanation.replace("\n", "<br><br>")}
+                            </div>
+                        </body>
+                        </html>
+                    """.trimIndent()
+
+                    explanationArea.text = formattedHtml
+
+                    explanationArea.caretPosition = 0
+
                     counterLabel.text = ProjectTrailerBundle.message("tour.counter", currentIndex + 1, totalSteps)
 
                     btnPrev.isEnabled = currentIndex > 0
@@ -109,8 +130,7 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
                     btnClose.isEnabled = true
                 },
                 onTourClosed = {
-                    titleLabel.text = ProjectTrailerBundle.message("tour.welcome")
-                    explanationArea.text = ""
+                    explanationArea.text = "<html><body><i>${ProjectTrailerBundle.message("tour.welcome")}</i></body></html>"
                     counterLabel.text = ""
 
                     btnPrev.isEnabled = false
@@ -125,8 +145,7 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
             btnClose.addActionListener { controller.close() }
 
             btnStartTour.addActionListener {
-                titleLabel.text = ProjectTrailerBundle.message("tour.generating")
-                explanationArea.text = ""
+                explanationArea.text = "<html><body><b>${ProjectTrailerBundle.message("tour.generating")}</b></body></html>"
                 btnStartTour.isEnabled = false
 
                 ApplicationManager.getApplication().executeOnPooledThread {
@@ -137,11 +156,11 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
                             if (steps.isNotEmpty()) {
                                 controller.start(steps)
                             } else {
-                                titleLabel.text = "Tour is empty."
+                                explanationArea.text = "<html><body>Tour is empty.</body></html>"
                                 btnStartTour.isEnabled = true
                             }
                         }.onFailure { e ->
-                            titleLabel.text = "Failed to generate tour."
+                            explanationArea.text = "<html><body><b style='color:red;'>Failed to generate tour.</b></body></html>"
                             Messages.showErrorDialog(project, e.message ?: "Error", "Tour Error")
                             btnStartTour.isEnabled = true
                         }
