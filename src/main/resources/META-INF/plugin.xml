@@ -9,11 +9,11 @@
     <resource-bundle>messages.ProjectTrailerBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow
-                anchor="right"
-                factoryClass="com.github.mishaguk.projecttrailer.toolWindow.ProjectTrailerToolWindowFactory"
-                id="ProjectTrailer"/>
-        <postStartupActivity implementation="com.github.mishaguk.projecttrailer.startup.ProjectTrailerStartupActivity" />
-        <projectViewNodeDecorator implementation="com.github.mishaguk.projecttrailer.toolWindow.TourNodeDecorator"/>
+        <toolWindow id="Project Trailer"
+                    anchor="right"
+                    icon="/icons/tour_icon.svg"
+                    factoryClass="com.github.mishaguk.projecttrailer.toolWindow.ProjectTrailerToolWindowFactory" />
+        <postStartupActivity
+                implementation="com.github.mishaguk.projecttrailer.startup.ProjectTrailerStartupActivity" />
     </extensions>
 </idea-plugin>
