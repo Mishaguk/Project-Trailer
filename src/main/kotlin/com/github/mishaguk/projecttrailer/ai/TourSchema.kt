@@ -28,6 +28,17 @@
         fun userPrompt(structure: String): String =
             "Project structure (indented listing, directories end with '/'):\n\n$structure"
 
+        fun userPromptFocused(structure: String, focusQuery: String): String =
+            "Project structure (indented listing, directories end with '/'):\n\n$structure\n\n" +
+                "IMPORTANT: The user wants a deep-dive tour focused on: \"$focusQuery\". " +
+                "Concentrate your tour steps on the files and directories most relevant to this area. " +
+                "If the input looks like a directory path, focus on that directory and its contents. " +
+                "If the input is a description (e.g. \"AI module\", \"frontend\", \"authentication\"), " +
+                "identify which directories/files in the listing relate to that topic and tour those. " +
+                "Go deeper into individual files in the focus area — explain key classes, functions, and design decisions. " +
+                "Use read_file to inspect important files in the focus area. " +
+                "Still produce 5-20 steps, but all focused on this area rather than the whole project."
+
         // OpenAI Structured Outputs JSON schema for the /chat/completions response_format.
         const val JSON_SCHEMA: String = """{
             "type":"object",

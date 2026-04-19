@@ -52,11 +52,20 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
         }
 
         private fun createTourBar(): JPanel {
-            val bar = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                border = JBUI.Borders.empty(4, 8)
+            val accentColor = JBColor(Color(0x28, 0xA7, 0x45), Color(0x3F, 0xB9, 0x50))
+            val cardBg = JBColor(Color(0xF7, 0xFB, 0xF7), Color(0x2A, 0x2E, 0x2A))
+
+            val btnStartTour = JButton(ProjectTrailerBundle.message("tour.start")).apply {
+                font = JBFont.label().asBold()
+                putClientProperty("JButton.buttonType", "roundRect")
             }
-            val btnStartTour = JButton(ProjectTrailerBundle.message("tour.start"))
-            bar.add(btnStartTour)
+            val focusField = JBTextField().apply {
+                emptyText.text = ProjectTrailerBundle.message("tour.focus.placeholder")
+                font = JBFont.label()
+            }
+            val btnFocusTour = JButton(ProjectTrailerBundle.message("tour.focus.start")).apply {
+                putClientProperty("JButton.buttonType", "roundRect")
+            }
 
             var activeBalloonRef: java.util.concurrent.atomic.AtomicReference<Balloon?>? = null
             lateinit var controller: TourController
@@ -70,6 +79,7 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
                     activeBalloonRef?.get()?.hide()
                     activeBalloonRef = null
                     btnStartTour.isEnabled = true
+                    btnFocusTour.isEnabled = true
                 },
                 onAfterSelect = { step, currentIndex, totalSteps, file ->
                     activeBalloonRef?.get()?.hide()
@@ -86,27 +96,104 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
                 },
             )
 
-            btnStartTour.addActionListener {
+            fun launchTour(focusQuery: String?) {
                 btnStartTour.isEnabled = false
+                btnFocusTour.isEnabled = false
                 ApplicationManager.getApplication().executeOnPooledThread {
-                    val result = TourService.getInstance(project).generate()
+                    val result = TourService.getInstance(project).generate(focusQuery)
                     ApplicationManager.getApplication().invokeLater {
                         result.onSuccess { steps ->
                             if (steps.isNotEmpty()) {
                                 controller.start(steps)
                             } else {
                                 btnStartTour.isEnabled = true
+                                btnFocusTour.isEnabled = true
                                 Messages.showInfoMessage(project, "Tour is empty.", "Project Tour")
                             }
                         }.onFailure { e ->
                             btnStartTour.isEnabled = true
+                            btnFocusTour.isEnabled = true
                             Messages.showErrorDialog(project, e.message ?: "Error", "Tour Error")
                         }
                     }
                 }
             }
 
-            return bar
+            btnStartTour.addActionListener { launchTour(null) }
+
+            btnFocusTour.addActionListener {
+                val query = focusField.text?.trim().orEmpty()
+                if (query.isEmpty()) {
+                    Messages.showWarningDialog(project, ProjectTrailerBundle.message("tour.focus.empty"), "Tour")
+                    return@addActionListener
+                }
+                launchTour(query)
+            }
+            focusField.addActionListener { btnFocusTour.doClick() }
+
+            val title = JLabel(ProjectTrailerBundle.message("tour.header.title")).apply {
+                font = JBFont.label().biggerOn(3f).asBold()
+                foreground = accentColor
+                border = JBUI.Borders.empty(0, 0, 2, 0)
+            }
+
+            val subtitle = JLabel(ProjectTrailerBundle.message("tour.header.subtitle")).apply {
+                font = JBFont.small()
+                foreground = JBColor.GRAY
+            }
+
+            val headerRow = JPanel(BorderLayout()).apply {
+                isOpaque = false
+                add(JPanel().apply {
+                    isOpaque = false
+                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                    add(title)
+                    add(subtitle)
+                }, BorderLayout.CENTER)
+                add(btnStartTour, BorderLayout.EAST)
+            }
+
+            val divider = object : JPanel() {
+                override fun getPreferredSize() = Dimension(super.getPreferredSize().width, 1)
+                override fun getMaximumSize() = Dimension(Int.MAX_VALUE, 1)
+            }.apply {
+                background = JBColor.border()
+            }
+
+            val focusLabel = JLabel(ProjectTrailerBundle.message("tour.focus.label")).apply {
+                font = JBFont.small().asBold()
+                foreground = JBColor.GRAY
+                border = JBUI.Borders.empty(0, 0, 4, 0)
+            }
+
+            val focusRow = JPanel(BorderLayout(6, 0)).apply {
+                isOpaque = false
+                add(focusField, BorderLayout.CENTER)
+                add(btnFocusTour, BorderLayout.EAST)
+            }
+
+            val card = JPanel().apply {
+                layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                background = cardBg
+                border = CompoundBorder(
+                    JBUI.Borders.empty(8, 10, 6, 10),
+                    CompoundBorder(
+                        MatteBorder(0, 3, 0, 0, accentColor),
+                        JBUI.Borders.empty(10, 12, 10, 12)
+                    )
+                )
+                add(headerRow)
+                add(Box.createVerticalStrut(8))
+                add(divider)
+                add(Box.createVerticalStrut(8))
+                add(focusLabel)
+                add(focusRow)
+            }
+
+            return JPanel(BorderLayout()).apply {
+                border = JBUI.Borders.empty(6, 6, 2, 6)
+                add(card, BorderLayout.NORTH)
+            }
         }
 
         private inner class ChatPanel {
@@ -139,6 +226,25 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
                 component = JPanel(BorderLayout()).apply {
                     add(scroll, BorderLayout.CENTER)
                     add(south, BorderLayout.SOUTH)
+                }
+
+                ChatPanelBridge.getInstance(project).onExplainRequest = { userLabel, question ->
+                    submitQuestion(userLabel, question)
+                }
+            }
+
+            fun submitQuestion(userLabel: String, question: String) {
+                addBubble(Role.USER, userLabel)
+                val thinkingBubble = addBubble(Role.ASSISTANT, ProjectTrailerBundle.message("chat.thinking"))
+                setInputEnabled(false)
+
+                ApplicationManager.getApplication().executeOnPooledThread {
+                    val result = ChatService.getInstance(project).ask(question)
+                    ApplicationManager.getApplication().invokeLater {
+                        result.onSuccess { reply -> thinkingBubble.setText(reply) }
+                            .onFailure { e -> thinkingBubble.setError(ProjectTrailerBundle.message("chat.error", e.message ?: "")) }
+                        setInputEnabled(true)
+                    }
                 }
             }
 

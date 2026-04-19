@@ -34,13 +34,19 @@ internal object TourAgent {
         }}
     """
 
-    fun run(project: Project, structure: String): Result<String> {
+    fun run(project: Project, structure: String, focusQuery: String? = null): Result<String> {
         val client = OpenAiClient.getInstance()
         val esc: (String) -> String = { client.jsonEscapePublic(it) }
 
+        val userPrompt = if (focusQuery != null) {
+            TourSchema.userPromptFocused(structure, focusQuery)
+        } else {
+            TourSchema.userPrompt(structure)
+        }
+
         val messages = mutableListOf<String>()
         messages += """{"role":"system","content":"${esc(TourSchema.SYSTEM_PROMPT_AGENT)}"}"""
-        messages += """{"role":"user","content":"${esc(TourSchema.userPrompt(structure))}"}"""
+        messages += """{"role":"user","content":"${esc(userPrompt)}"}"""
 
         var iteration = 0
         while (iteration < MAX_ITERATIONS) {

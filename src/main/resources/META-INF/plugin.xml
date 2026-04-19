@@ -8,6 +8,17 @@
 
     <resource-bundle>messages.ProjectTrailerBundle</resource-bundle>
 
+    <actions>
+        <action id="ProjectTrailer.ExplainWithAi"
+                class="com.github.mishaguk.projecttrailer.actions.ExplainWithAiAction"
+                text="Explain with AI"
+                description="Ask AI to explain the selected file or folder"
+                icon="/icons/tour_icon.svg">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+    </actions>
+
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Project Trailer"
                     anchor="right"

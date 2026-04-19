@@ -14,7 +14,9 @@ class TourService(private val project: Project) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun generate(): Result<List<TourStep>> {
+    fun generate(): Result<List<TourStep>> = generate(null)
+
+    fun generate(focusQuery: String?): Result<List<TourStep>> {
         AiKeyProvider.getInstance().getApiKey()
             ?: return Result.failure(IllegalStateException(ProjectTrailerBundle.message("ai.test.noKey")))
 
@@ -24,7 +26,7 @@ class TourService(private val project: Project) {
         println("===== end =====")
         thisLogger().info("Project structure to send (${structure.length} chars):\n$structure")
 
-        val raw = TourAgent.run(project, structure).getOrElse { return Result.failure(it) }
+        val raw = TourAgent.run(project, structure, focusQuery).getOrElse { return Result.failure(it) }
 
         val parsed = try {
             json.decodeFromString<TourResponse>(raw)
