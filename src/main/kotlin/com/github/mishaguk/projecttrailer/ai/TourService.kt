@@ -32,14 +32,21 @@ class TourService(private val project: Project) {
             return Result.failure(IllegalStateException("Model returned invalid JSON: ${e.message}"))
         }
 
+        println(parsed)
+
         val validated = parsed.steps.filter { pathExists(it.path) }
+
+        println(validated)
         thisLogger().info("Tour steps: ${parsed.steps.size} total, ${validated.size} with existing paths")
         return Result.success(validated)
     }
 
     private fun pathExists(relPath: String): Boolean {
         val base = project.basePath ?: return false
-        val normalized = relPath.trimStart('/', '\\')
+        val normalized = relPath
+            .trim()
+            .trimStart('/', '\\')
+            .removeSuffix("/")
         val absolute = Path.of(base, normalized).toString()
         return LocalFileSystem.getInstance().findFileByPath(absolute.replace('\\', '/')) != null
     }

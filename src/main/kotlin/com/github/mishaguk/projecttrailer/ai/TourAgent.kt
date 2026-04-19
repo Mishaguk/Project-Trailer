@@ -66,9 +66,7 @@ internal object TourAgent {
                 val argsStr = fn["arguments"]?.jsonPrimitive?.contentOrNull ?: "{}"
                 val result = executeTool(project, name, argsStr)
                 val preview = result.take(200).replace('\n', ' ')
-                thisLogger().warn("TourAgent tool=$name args=$argsStr -> $preview")
-                println("  tool=$name args=$argsStr")
-                println("  -> $preview")
+
                 messages += """{"role":"tool","tool_call_id":"${esc(id)}","content":"${esc(result)}"}"""
             }
         }

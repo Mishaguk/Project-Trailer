@@ -14,9 +14,10 @@ internal object ProjectStructureScanner {
     )
 
     private const val MAX_CHARS = 8_000
-    private const val FILE_DEPTH_LIMIT = 5;
+    private const val FILE_DEPTH_LIMIT = 15;
 
-    fun scan(project: Project, maxDepth: Int = 3): String = ReadAction.compute<String, RuntimeException> {
+    fun scan(project: Project, maxDepth: Int = 10): String = ReadAction.compute<String, RuntimeException> {
+
         val fileIndex = ProjectFileIndex.getInstance(project)
         val basePath = project.basePath
         val sb = StringBuilder()

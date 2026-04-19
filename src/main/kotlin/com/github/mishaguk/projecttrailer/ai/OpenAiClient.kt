@@ -26,41 +26,6 @@ class OpenAiClient {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun testConnection(): Result<String> {
-        val key = requireKey().getOrElse { return Result.failure(it) }
-
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create("${AiConfig.BASE_URL}/models"))
-            .timeout(Duration.ofSeconds(15))
-            .header("Authorization", "Bearer $key")
-            .GET()
-            .build()
-
-        return try {
-            val response = http.send(request, HttpResponse.BodyHandlers.discarding())
-            when (val code = response.statusCode()) {
-                200 -> Result.success("OK")
-                401 -> Result.failure(IllegalStateException("Invalid key (401)"))
-                else -> Result.failure(IllegalStateException("HTTP $code"))
-            }
-        } catch (e: IOException) {
-            Result.failure(IllegalStateException(e.message ?: "Network error"))
-        } catch (e: InterruptedException) {
-            Thread.currentThread().interrupt()
-            Result.failure(IllegalStateException("Interrupted"))
-        }
-    }
-
-    fun chatJson(system: String, user: String, schemaJson: String, schemaName: String = "response"): Result<String> {
-        val body = """{"model":"${AiConfig.MODEL}","messages":[""" +
-            """{"role":"system","content":"${jsonEscape(system)}"},""" +
-            """{"role":"user","content":"${jsonEscape(user)}"}""" +
-            """],"response_format":{"type":"json_schema","json_schema":{""" +
-            """"name":"${jsonEscape(schemaName)}","strict":true,"schema":$schemaJson""" +
-            """}}}"""
-        return postChat(body)
-    }
-
     /**
      * Low-level chat call. `bodyJson` is the full request body. Returns the first choice's
      * assistant `message` object as a raw JSON string so callers can inspect `tool_calls`.
