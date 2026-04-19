@@ -11,6 +11,12 @@ internal object TourSchema {
             "'title' is a short human label; 'explanation' is at most two sentences describing what lives there and why it matters. " +
             "Order steps so earlier ones give context for later ones. Do not invent paths."
 
+    const val SYSTEM_PROMPT_AGENT: String = SYSTEM_PROMPT +
+        " You may call the `read_file(path, startLine?, endLine?)` tool up to 6 times to inspect files" +
+        " from the listing before producing steps. Prefer entry points (main classes, startup activities," +
+        " services, plugin.xml, build files). When you have enough context, stop calling tools and a" +
+        " follow-up turn will ask you for the final JSON."
+
     fun userPrompt(structure: String): String =
         "Project structure (indented listing, directories end with '/'):\n\n$structure"
 

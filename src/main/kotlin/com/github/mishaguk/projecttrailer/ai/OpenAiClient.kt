@@ -5,6 +5,8 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import java.io.IOException
 import java.net.URI
 import java.net.http.HttpClient
@@ -58,6 +60,41 @@ class OpenAiClient {
             """}}}"""
         return postChat(body)
     }
+
+    /**
+     * Low-level chat call. `bodyJson` is the full request body. Returns the first choice's
+     * assistant `message` object as a raw JSON string so callers can inspect `tool_calls`.
+     * MVP: minimal parsing, caller handles the rest.
+     */
+    fun chatRawMessage(bodyJson: String): Result<String> {
+        val key = requireKey().getOrElse { return Result.failure(it) }
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create("${AiConfig.BASE_URL}/chat/completions"))
+            .timeout(Duration.ofSeconds(60))
+            .header("Authorization", "Bearer $key")
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(bodyJson, Charsets.UTF_8))
+            .build()
+        return try {
+            val response = http.send(request, HttpResponse.BodyHandlers.ofString(Charsets.UTF_8))
+            val code = response.statusCode()
+            val respBody = response.body().orEmpty()
+            if (code != 200) return Result.failure(IllegalStateException("HTTP $code: ${respBody.take(300)}"))
+            val root = json.parseToJsonElement(respBody).jsonObject
+            val msg = root["choices"]?.jsonArray?.firstOrNull()?.jsonObject?.get("message")
+                ?: return Result.failure(IllegalStateException("No message in response"))
+            Result.success(msg.toString())
+        } catch (e: IOException) {
+            Result.failure(IllegalStateException(e.message ?: "Network error"))
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            Result.failure(IllegalStateException("Interrupted"))
+        } catch (e: Exception) {
+            Result.failure(IllegalStateException("Parse error: ${e.message}"))
+        }
+    }
+
+    fun jsonEscapePublic(s: String): String = jsonEscape(s)
 
     fun chatMessages(messages: List<ChatMessage>): Result<String> {
         val messagesJson = messages.joinToString(",") {

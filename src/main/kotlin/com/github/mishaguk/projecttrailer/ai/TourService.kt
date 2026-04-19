@@ -24,12 +24,7 @@ class TourService(private val project: Project) {
         println("===== end =====")
         thisLogger().info("Project structure to send (${structure.length} chars):\n$structure")
 
-        val raw = OpenAiClient.getInstance().chatJson(
-            system = TourSchema.SYSTEM_PROMPT,
-            user = TourSchema.userPrompt(structure),
-            schemaJson = TourSchema.JSON_SCHEMA,
-            schemaName = "tour",
-        ).getOrElse { return Result.failure(it) }
+        val raw = TourAgent.run(project, structure).getOrElse { return Result.failure(it) }
 
         val parsed = try {
             json.decodeFromString<TourResponse>(raw)
