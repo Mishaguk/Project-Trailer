@@ -8,13 +8,13 @@ import com.intellij.openapi.vfs.VirtualFile
 
 internal object ProjectStructureScanner {
 
-    private val DENY_LIST = setOf(
+    internal val DENY_LIST = setOf(
         ".git", ".idea", ".gradle", ".kotlin", ".intellijPlatform",
         "build", "out", "node_modules", "dist", "target",
     )
 
     private const val MAX_CHARS = 8_000
-    private const val FILE_DEPTH_LIMIT = 2
+    private const val FILE_DEPTH_LIMIT = 5;
 
     fun scan(project: Project, maxDepth: Int = 3): String = ReadAction.compute<String, RuntimeException> {
         val fileIndex = ProjectFileIndex.getInstance(project)

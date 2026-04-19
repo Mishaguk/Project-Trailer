@@ -14,5 +14,6 @@
                 factoryClass="com.github.mishaguk.projecttrailer.toolWindow.ProjectTrailerToolWindowFactory"
                 id="ProjectTrailer"/>
         <postStartupActivity implementation="com.github.mishaguk.projecttrailer.startup.ProjectTrailerStartupActivity" />
+        <projectViewNodeDecorator implementation="com.github.mishaguk.projecttrailer.toolWindow.TourNodeDecorator"/>
     </extensions>
 </idea-plugin>

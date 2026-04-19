@@ -2,21 +2,16 @@ package com.github.mishaguk.projecttrailer.toolWindow
 
 import com.github.mishaguk.projecttrailer.ProjectTrailerBundle
 import com.github.mishaguk.projecttrailer.ai.ChatService
-import com.github.mishaguk.projecttrailer.ai.OpenAiClient
-import com.github.mishaguk.projecttrailer.ai.ProjectStructureScanner
 import com.github.mishaguk.projecttrailer.ai.TourService
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.ui.popup.Balloon
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBScrollPane
-import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.components.JBTextField
-import com.intellij.ui.components.JBLabel
-import com.intellij.ui.components.JBPanel
 import com.intellij.ui.content.ContentFactory
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
@@ -29,7 +24,6 @@ import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JComponent
-import javax.swing.JEditorPane
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextArea
@@ -49,196 +43,70 @@ class ProjectTrailerToolWindowFactory : ToolWindowFactory {
 
     class ProjectTrailerToolWindow(toolWindow: ToolWindow) {
         private val project = toolWindow.project
-        private val log = thisLogger()
 
         fun getContent(): JComponent {
-            val tabbedPane = JBTabbedPane()
-            tabbedPane.addTab("Project Tour", createTourPanel())
-            tabbedPane.addTab("AI Chat & Debug", createChatAndDebugPanel())
-            return tabbedPane
+            val root = JPanel(BorderLayout())
+            root.add(createTourBar(), BorderLayout.NORTH)
+            root.add(ChatPanel().component, BorderLayout.CENTER)
+            return root
         }
 
-        private fun createTourPanel(): JPanel {
-            val mainPanel = JBPanel<JBPanel<*>>(BorderLayout())
-
-            val topPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+        private fun createTourBar(): JPanel {
+            val bar = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                border = JBUI.Borders.empty(4, 8)
+            }
             val btnStartTour = JButton(ProjectTrailerBundle.message("tour.start"))
-            topPanel.add(btnStartTour)
+            bar.add(btnStartTour)
 
-            val centerPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
-                border = JBUI.Borders.empty(10)
-            }
-
-            val explanationArea = JEditorPane().apply {
-                contentType = "text/html"
-                isEditable = false
-                isOpaque = false
-                border = JBUI.Borders.emptyTop(10)
-                putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, true)
-                text = "<html><body><i>${ProjectTrailerBundle.message("tour.welcome")}</i></body></html>"
-            }
-
-            val scrollPane = JBScrollPane(explanationArea).apply {
-                border = JBUI.Borders.empty()
-                isOpaque = false
-                viewport.isOpaque = false
-            }
-
-            centerPanel.add(scrollPane, BorderLayout.CENTER)
-
-            val bottomPanel = JPanel(BorderLayout())
-            val navButtonsPanel = JPanel(FlowLayout(FlowLayout.CENTER))
-            val btnPrev = JButton(ProjectTrailerBundle.message("tour.prev")).apply { isEnabled = false }
-            val btnNext = JButton(ProjectTrailerBundle.message("tour.next")).apply { isEnabled = false }
-            val btnClose = JButton(ProjectTrailerBundle.message("tour.close")).apply { isEnabled = false }
-
-            val counterLabel = JBLabel("", SwingConstants.CENTER)
-
-            navButtonsPanel.add(btnPrev)
-            navButtonsPanel.add(btnNext)
-            navButtonsPanel.add(btnClose)
-
-            bottomPanel.add(counterLabel, BorderLayout.NORTH)
-            bottomPanel.add(navButtonsPanel, BorderLayout.CENTER)
-
-            mainPanel.add(topPanel, BorderLayout.NORTH)
-            mainPanel.add(centerPanel, BorderLayout.CENTER)
-            mainPanel.add(bottomPanel, BorderLayout.SOUTH)
-
-            val controller = TourController(
+            var activeBalloonRef: java.util.concurrent.atomic.AtomicReference<Balloon?>? = null
+            lateinit var controller: TourController
+            controller = TourController(
                 project = project,
-                onStepChanged = { step, currentIndex, totalSteps ->
-                    val formattedHtml = """
-                        <html>
-                        <body style="line-height: 1.5;">
-                            <h3 style="color: #58A6FF; margin-top: 0; margin-bottom: 10px;">${step.path}</h3>
-                            <div style="font-size: 13px;">
-                                ${step.explanation.replace("\n", "<br><br>")}
-                            </div>
-                        </body>
-                        </html>
-                    """.trimIndent()
-
-                    explanationArea.text = formattedHtml
-
-                    explanationArea.caretPosition = 0
-
-                    counterLabel.text = ProjectTrailerBundle.message("tour.counter", currentIndex + 1, totalSteps)
-
-                    btnPrev.isEnabled = currentIndex > 0
-                    btnNext.isEnabled = currentIndex < totalSteps - 1
-                    btnClose.isEnabled = true
+                onStepChanged = { _, _, _ ->
+                    activeBalloonRef?.get()?.hide()
+                    activeBalloonRef = null
                 },
                 onTourClosed = {
-                    explanationArea.text = "<html><body><i>${ProjectTrailerBundle.message("tour.welcome")}</i></body></html>"
-                    counterLabel.text = ""
-
-                    btnPrev.isEnabled = false
-                    btnNext.isEnabled = false
-                    btnClose.isEnabled = false
+                    activeBalloonRef?.get()?.hide()
+                    activeBalloonRef = null
                     btnStartTour.isEnabled = true
-                }
+                },
+                onAfterSelect = { step, currentIndex, totalSteps, file ->
+                    activeBalloonRef?.get()?.hide()
+                    activeBalloonRef = TourBalloonPresenter.show(
+                        project = project,
+                        step = step,
+                        index = currentIndex,
+                        total = totalSteps,
+                        targetFile = file,
+                        onPrev = { controller.prev() },
+                        onNext = { controller.next() },
+                        onClose = { controller.close() },
+                    )
+                },
             )
 
-            btnPrev.addActionListener { controller.prev() }
-            btnNext.addActionListener { controller.next() }
-            btnClose.addActionListener { controller.close() }
-
             btnStartTour.addActionListener {
-                explanationArea.text = "<html><body><b>${ProjectTrailerBundle.message("tour.generating")}</b></body></html>"
                 btnStartTour.isEnabled = false
-
                 ApplicationManager.getApplication().executeOnPooledThread {
                     val result = TourService.getInstance(project).generate()
-
                     ApplicationManager.getApplication().invokeLater {
                         result.onSuccess { steps ->
                             if (steps.isNotEmpty()) {
                                 controller.start(steps)
                             } else {
-                                explanationArea.text = "<html><body>Tour is empty.</body></html>"
                                 btnStartTour.isEnabled = true
+                                Messages.showInfoMessage(project, "Tour is empty.", "Project Tour")
                             }
                         }.onFailure { e ->
-                            explanationArea.text = "<html><body><b style='color:red;'>Failed to generate tour.</b></body></html>"
-                            Messages.showErrorDialog(project, e.message ?: "Error", "Tour Error")
                             btnStartTour.isEnabled = true
+                            Messages.showErrorDialog(project, e.message ?: "Error", "Tour Error")
                         }
                     }
                 }
             }
 
-            return mainPanel
-        }
-
-        private fun createChatAndDebugPanel(): JPanel {
-            return JPanel(BorderLayout()).apply {
-                add(debugBar(), BorderLayout.NORTH)
-                add(ChatPanel().component, BorderLayout.CENTER)
-            }
-        }
-
-        private fun debugBar(): JPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(scanButton())
-            add(testConnectionButton())
-            add(generateTourButton())
-        }
-
-        private fun scanButton() = JButton(ProjectTrailerBundle.message("debug.scan.button")).apply {
-            addActionListener {
-                val button = this
-                button.isEnabled = false
-                ApplicationManager.getApplication().executeOnPooledThread {
-                    val output = ProjectStructureScanner.scan(project)
-                    log.info("ProjectStructureScanner output:\n$output")
-                    ApplicationManager.getApplication().invokeLater {
-                        button.isEnabled = true
-                        Messages.showInfoMessage(
-                            project,
-                            ProjectTrailerBundle.message("debug.scan.done", output.length),
-                            ProjectTrailerBundle.message("debug.scan.title"),
-                        )
-                    }
-                }
-            }
-        }
-
-        private fun testConnectionButton() = JButton(ProjectTrailerBundle.message("ai.test.button")).apply {
-            addActionListener {
-                val button = this
-                button.isEnabled = false
-                ApplicationManager.getApplication().executeOnPooledThread {
-                    val result = OpenAiClient.getInstance().testConnection()
-                    ApplicationManager.getApplication().invokeLater {
-                        button.isEnabled = true
-                        val title = ProjectTrailerBundle.message("ai.test.title")
-                        result.onSuccess {
-                            Messages.showInfoMessage(project, ProjectTrailerBundle.message("ai.test.ok"), title)
-                        }.onFailure { e ->
-                            Messages.showErrorDialog(project, ProjectTrailerBundle.message("ai.test.failed", e.message ?: ""), title)
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun generateTourButton() = JButton(ProjectTrailerBundle.message("debug.tour.button")).apply {
-            addActionListener {
-                val button = this
-                button.isEnabled = false
-                ApplicationManager.getApplication().executeOnPooledThread {
-                    val result = TourService.getInstance(project).generate()
-                    ApplicationManager.getApplication().invokeLater {
-                        button.isEnabled = true
-                        val title = ProjectTrailerBundle.message("debug.tour.title")
-                        result.onSuccess { steps ->
-                            Messages.showInfoMessage(project, ProjectTrailerBundle.message("debug.tour.done", steps.size), title)
-                        }.onFailure { e ->
-                            Messages.showErrorDialog(project, ProjectTrailerBundle.message("ai.test.failed", e.message ?: ""), title)
-                        }
-                    }
-                }
-            }
+            return bar
         }
 
         private inner class ChatPanel {
