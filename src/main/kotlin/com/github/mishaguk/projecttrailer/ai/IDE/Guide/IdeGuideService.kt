@@ -1,6 +1,9 @@
-package com.github.mishaguk.projecttrailer.ai
+package com.github.mishaguk.projecttrailer.ai.IDE.Guide
 
 import com.github.mishaguk.projecttrailer.ProjectTrailerBundle
+import com.github.mishaguk.projecttrailer.ai.core.AiConfig
+import com.github.mishaguk.projecttrailer.ai.core.AiKeyProvider
+import com.github.mishaguk.projecttrailer.ai.core.OpenAiClient
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service

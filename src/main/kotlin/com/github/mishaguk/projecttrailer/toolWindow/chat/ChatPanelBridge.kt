@@ -1,7 +1,6 @@
-package com.github.mishaguk.projecttrailer.toolWindow
+package com.github.mishaguk.projecttrailer.toolWindow.chat
 
 import com.github.mishaguk.projecttrailer.ProjectTrailerBundle
-import com.github.mishaguk.projecttrailer.ai.ChatService
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service

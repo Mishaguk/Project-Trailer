@@ -1,4 +1,4 @@
-package com.github.mishaguk.projecttrailer.toolWindow
+package com.github.mishaguk.projecttrailer.toolWindow.tour
 
 import com.intellij.ide.projectView.ProjectView
 import com.intellij.openapi.application.ApplicationManager

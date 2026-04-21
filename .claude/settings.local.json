@@ -4,7 +4,10 @@
       "Bash(gh api *)",
       "Bash(./gradlew compileKotlin --console=plain)",
       "WebFetch(domain:plugins.jetbrains.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(./gradlew compileKotlin)",
+      "Bash(./gradlew compileKotlin -q)",
+      "Bash(./gradlew build *)"
     ]
   }
 }

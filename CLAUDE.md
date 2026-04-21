@@ -49,3 +49,14 @@ The `com.github.mishaguk.projecttrailer.ai` package holds the OpenAI-backed feat
 - **Central config**: `AiConfig` pins `BASE_URL`, `MODEL` (`gpt-4o-mini`), the env resource name, and the key name. Change model/base URL here rather than inlining.
 - **HTTP layer**: `OpenAiClient` is the single transport; `ChatService` and `TourService` are higher-level features that should go through it. `ProjectStructureScanner` produces the project-tree context; `TourSchema`/`TourStep` define the structured-output format.
 - When adding AI features, wire them through `AiKeyProvider` + `OpenAiClient` rather than re-reading env files or building new HTTP clients.
+
+## Tour UI (`toolWindow/` package)
+
+The guided-tour feature is split into collaborators around `TourController`:
+
+- `TourController` owns the list of `TourStep`s, the current index, and navigation (`start`/`next`/`prev`/`close`). It resolves each step's `path` (relative to `project.basePath`) to a `VirtualFile`, selects it in the Project View, and opens non-directory files in the editor. Callers pass callbacks (`onStepChanged`, `onTourClosed`, `onAfterSelect`) — the controller does not render UI itself.
+- `TourHighlightRegistry` is a project-level state holder listing all tour files plus the "current" one; `TourNodeDecorator` reads from it to tint matching nodes in the Project View. Whenever tour state changes, the controller calls `pushRegistry()` — forgetting this leaves stale highlights.
+- `TourBalloonPresenter` renders the per-step balloon invoked from `onAfterSelect`, after the Project View selection has settled (the controller double-`invokeLater`s for this reason).
+- `ProjectTrailerToolWindowFactory` builds the tool window and wires the controller's callbacks to its UI (step text, prev/next buttons, close).
+
+When extending the tour, prefer adding state to `TourController` and pushing changes through the registry rather than poking the Project View directly from UI code.

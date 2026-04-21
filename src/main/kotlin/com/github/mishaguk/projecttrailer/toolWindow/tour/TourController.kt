@@ -1,6 +1,6 @@
-package com.github.mishaguk.projecttrailer.toolWindow
+package com.github.mishaguk.projecttrailer.toolWindow.tour
 
-import com.github.mishaguk.projecttrailer.ai.TourStep
+import com.github.mishaguk.projecttrailer.ai.tour.TourStep
 import com.intellij.ide.projectView.ProjectView
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager

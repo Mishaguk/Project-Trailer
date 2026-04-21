@@ -1,6 +1,7 @@
-package com.github.mishaguk.projecttrailer.ai
+package com.github.mishaguk.projecttrailer.ai.core
 
 import com.github.mishaguk.projecttrailer.ProjectTrailerBundle
+import com.github.mishaguk.projecttrailer.ai.chat.ChatMessage
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import kotlinx.serialization.Serializable

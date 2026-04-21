@@ -1,4 +1,4 @@
-package com.github.mishaguk.projecttrailer.toolWindow
+package com.github.mishaguk.projecttrailer.toolWindow.IDE.guide
 
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces

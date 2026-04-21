@@ -1,4 +1,4 @@
-package com.github.mishaguk.projecttrailer.ai
+package com.github.mishaguk.projecttrailer.ai.scanner
 
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.project.Project
@@ -6,7 +6,7 @@ import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 
-internal object ProjectStructureScanner {
+internal object FileTreeScanner {
 
     internal val DENY_LIST = setOf(
         ".git", ".idea", ".gradle", ".kotlin", ".intellijPlatform",

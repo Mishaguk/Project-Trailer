@@ -1,5 +1,7 @@
-package com.github.mishaguk.projecttrailer.ai
+package com.github.mishaguk.projecttrailer.ai.chat
 
+import com.github.mishaguk.projecttrailer.ai.core.OpenAiClient
+import com.github.mishaguk.projecttrailer.ai.scanner.FileTreeScanner
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
@@ -13,7 +15,7 @@ class ChatService(private val project: Project) {
     @Synchronized
     fun ask(userText: String): Result<String> {
         if (history.isEmpty()) {
-            val structure = ProjectStructureScanner.scan(project)
+            val structure = FileTreeScanner.scan(project)
             history += ChatMessage(ChatMessage.SYSTEM, ChatPrompts.systemPromptWithStructure(structure))
             thisLogger().info("ChatService: initialized with structure (${structure.length} chars)")
         }

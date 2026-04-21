@@ -1,0 +1,9 @@
+package com.github.mishaguk.projecttrailer.toolWindow.chat
+
+import com.intellij.ui.JBColor
+import java.awt.Color
+
+enum class Role(val label: String, val accent: JBColor, val background: JBColor) {
+    USER("You", JBColor(Color(0x34, 0x78, 0xF6), Color(0x58, 0xA6, 0xFF)), JBColor(Color(0xEE, 0xF4, 0xFF), Color(0x2C, 0x33, 0x42))),
+    ASSISTANT("AI", JBColor(Color(0x28, 0xA7, 0x45), Color(0x3F, 0xB9, 0x50)), JBColor(Color(0xF5, 0xF7, 0xF5), Color(0x2A, 0x2E, 0x2A)));
+}

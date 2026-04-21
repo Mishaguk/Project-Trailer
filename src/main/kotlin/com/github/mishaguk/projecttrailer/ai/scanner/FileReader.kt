@@ -1,4 +1,4 @@
-package com.github.mishaguk.projecttrailer.ai
+package com.github.mishaguk.projecttrailer.ai.scanner
 
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.project.Project
@@ -16,7 +16,7 @@ internal object FileReader {
         val base = project.basePath ?: return@compute "ERROR: project has no base path"
         val normalized = relPath.trimStart('/', '\\').replace('\\', '/')
         if (normalized.isEmpty()) return@compute "ERROR: empty path"
-        if (normalized.split('/').any { it in ProjectStructureScanner.DENY_LIST }) {
+        if (normalized.split('/').any { it in FileTreeScanner.DENY_LIST }) {
             return@compute "ERROR: path contains denied directory"
         }
         val absolute = Path.of(base, normalized).toString().replace('\\', '/')
@@ -57,7 +57,7 @@ internal object FileReader {
 
     private fun search(dir: VirtualFile, basename: String): VirtualFile? {
         if (!dir.isDirectory) return null
-        if (dir.name in ProjectStructureScanner.DENY_LIST) return null
+        if (dir.name in FileTreeScanner.DENY_LIST) return null
         val children = dir.children ?: return null
         for (child in children) {
             if (!child.isDirectory && child.name == basename) return child

@@ -1,4 +1,4 @@
-package com.github.mishaguk.projecttrailer.ai
+package com.github.mishaguk.projecttrailer.ai.core
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service

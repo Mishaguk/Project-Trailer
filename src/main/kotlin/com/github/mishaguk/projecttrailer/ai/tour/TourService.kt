@@ -1,6 +1,8 @@
-package com.github.mishaguk.projecttrailer.ai
+package com.github.mishaguk.projecttrailer.ai.tour
 
 import com.github.mishaguk.projecttrailer.ProjectTrailerBundle
+import com.github.mishaguk.projecttrailer.ai.core.AiKeyProvider
+import com.github.mishaguk.projecttrailer.ai.scanner.FileTreeScanner
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
@@ -20,7 +22,7 @@ class TourService(private val project: Project) {
         AiKeyProvider.getInstance().getApiKey()
             ?: return Result.failure(IllegalStateException(ProjectTrailerBundle.message("ai.test.noKey")))
 
-        val structure = ProjectStructureScanner.scan(project)
+        val structure = FileTreeScanner.scan(project)
         println("===== TourService: structure to send (${structure.length} chars) =====")
         println(structure)
         println("===== end =====")

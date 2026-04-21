@@ -1,7 +1,7 @@
 package com.github.mishaguk.projecttrailer.actions
 
-import com.github.mishaguk.projecttrailer.ai.FileReader
-import com.github.mishaguk.projecttrailer.toolWindow.ChatPanelBridge
+import com.github.mishaguk.projecttrailer.ai.scanner.FileReader
+import com.github.mishaguk.projecttrailer.toolWindow.chat.ChatPanelBridge
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent

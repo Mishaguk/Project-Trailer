@@ -1,4 +1,4 @@
-package com.github.mishaguk.projecttrailer.ai
+package com.github.mishaguk.projecttrailer.ai.core
 
 internal object AiConfig {
     const val BASE_URL = "https://api.openai.com/v1"

@@ -1,4 +1,4 @@
-package com.github.mishaguk.projecttrailer.ai
+package com.github.mishaguk.projecttrailer.ai.IDE.Guide
 
 import kotlinx.serialization.Serializable
 

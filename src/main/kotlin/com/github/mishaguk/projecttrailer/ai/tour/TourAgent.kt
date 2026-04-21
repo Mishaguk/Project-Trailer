@@ -1,5 +1,8 @@
-package com.github.mishaguk.projecttrailer.ai
+package com.github.mishaguk.projecttrailer.ai.tour
 
+import com.github.mishaguk.projecttrailer.ai.core.AiConfig
+import com.github.mishaguk.projecttrailer.ai.core.OpenAiClient
+import com.github.mishaguk.projecttrailer.ai.scanner.FileReader
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import kotlinx.serialization.json.Json
