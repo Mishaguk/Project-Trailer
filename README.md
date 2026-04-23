@@ -1,14 +1,28 @@
 # ProjectTrailer
 
-![Build](https://github.com/Mishaguk/ProjectTrailer/workflows/Build/badge.svg)
+### IntelliJ IDEA plugin by team **Who_knows**.
 
-IntelliJ IDEA plugin by team **Who_knows**.
-
-<!-- Plugin description -->
 ProjectTrailer is an IntelliJ Platform plugin that adds AI-assisted helpers to the IDE.
 
-The plugin currently ships a scaffold tool window registered under the **ProjectTrailer** id. Real features will land here as the team builds them out.
-<!-- Plugin description end -->
+## Overview
+
+ProjectTrailer makes onboarding to a new project faster and less painful, right inside IntelliJ IDEA.
+
+### Core features
+
+- **Message bubbles** — visual annotations that explain project structure inline, directly in the Project View.
+- **Full project tour** — a guided, step-by-step walkthrough of the entire codebase.
+- **Focused module tour** — ask about a specific module without going through the full project tour.
+- **IDE helper** — can't find a setting or IDE feature? The plugin guides you directly to it.
+- **AI chat** — a built-in chat for questions about the project or its code.
+- **File explainer** — select any file and get a plain-language explanation of what it does.
+
+### Screenshots
+
+![Plugin interface](.github/assets/plugin-interface.png)
+
+![Bubble message demo](.github/assets/bubble-message-demo.png)
+
 
 ## Development
 
@@ -58,25 +72,4 @@ This project is built with Gradle and the [IntelliJ Platform Gradle Plugin](http
    ```
    Output lands in `build/distributions/*.zip` — this is what you upload to JetBrains Marketplace or install manually.
 
-### Common Gradle commands
-
-```bash
-./gradlew runIde         # launch sandbox IDE with the plugin loaded
-./gradlew test           # run unit tests
-./gradlew build          # produce a distributable plugin zip in build/distributions/
-./gradlew verifyPlugin   # verify compatibility with target IDE versions
-./gradlew patchChangelog # roll [Unreleased] into the current version
-```
-
-## Installation
-
-Once published to JetBrains Marketplace:
-
-- <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > search for `ProjectTrailer`.
-
-Manual install from a built zip:
-
-- <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd> and pick the zip from `build/distributions/`.
-
----
-Plugin based on the [IntelliJ Platform Plugin Template](https://github.com/JetBrains/intellij-platform-plugin-template).
+#### Plugin based on the [IntelliJ Platform Plugin Template](https://github.com/JetBrains/intellij-platform-plugin-template).
